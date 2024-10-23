@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detección de Rostros</title>
+</head>
+<body>
+    <h1>Selecciona Imagen para Detección de Rostros</h1>
+    <select id="imageSelect" onchange="loadSelectedImage()">
+        <option value="">-- Selecciona una imagen --</option>
+        <!-- Las opciones se llenarán mediante JavaScript -->
+    </select>
+    <br>
+    <button type="button" onclick="uploadImage()">Analizar Imagen</button>
+    <br>
+    <h3 id="resultText"></h3>
+    <img id="resultImage" alt="Imagen con detección de rostros">
+    
+    <script>
+        // Cargar las imágenes desde el servidor
+        async function loadImages() {
+            const response = await fetch('/images');
+            const images = await response.json();
+            const select = document.getElementById('imageSelect');
+            images.forEach(image => {
+                const option = document.createElement('option');
+                option.value = image;
+                option.textContent = image;
+                select.appendChild(option);
+            });
+        }
+
+        // Cargar la imagen seleccionada en la vista previa
+        function loadSelectedImage() {
+            const select = document.getElementById('imageSelect');
+            const imageName = select.value;
+            if (imageName) {
+                document.getElementById('resultImage').src = `/imagenes/${imageName}`;
+            } else {
+                document.getElementById('resultImage').src = '';
+            }
+        }
+
+        async function uploadImage() {
+            const select = document.getElementById('imageSelect');
+            const imageName = select.value;
+            if (!imageName) {
+                document.getElementById('resultText').textContent = 'Por favor, selecciona una imagen.';
+                return;
+            }
+            const formData = new FormData();
+            formData.append('image', imageName);
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.error) {
+                    document.getElementById('resultText').textContent = data.error;
+                    document.getElementById('resultImage').src = '';
+                } else {
+                    document.getElementById('resultText').textContent = data.matrix;
+                    document.getElementById('resultImage').src = data.image;
+                }
+            } catch (error) {
+                document.getElementById('resultText').textContent = 'Error al procesar la imagen.';
+                document.getElementById('resultImage').src = '';
+            }
+        }
+
+        // Cargar las imágenes cuando se cargue la página
+        window.onload = loadImages;
+    </script>
+</body>
+</html>
